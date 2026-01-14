@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "version": "PTDL_1",
+    "update_url": null
+  },
+  "comment": "Hytale Hybrid Egg by Gemini. Supports x86_64 and ARM64 (Oracle Ampere) natively.",
+  "name": "Hytale Hybrid",
+  "description": "A robust Hytale server egg with architecture-aware downloading via Box64 for ARM nodes.",
+  "features": null,
+  "docker_images": {
+    "Hytale Hybrid (Latest)": "zneh/hytale-hybrid:latest"
+  },
+  "file_denylist": [],
+  "startup": "export SERVER_PORT={{SERVER_PORT}} && /bin/bash /entrypoint.sh",
+  "config": {
+    "files": "{}",
+    "startup": "{\"done\": \"Server started on\"}",
+    "stop": "^C",
+    "logs": "{}",
+    "extends": null
+  },
+  "variables": [
+    {
+      "name": "Server Port",
+      "description": "The UDP port for the Hytale server (QUIC protocol).",
+      "env_variable": "SERVER_PORT",
+      "default_value": "5520",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|numeric|digits_between:1,5"
+    },
+    {
+      "name": "Server Memory",
+      "description": "Memory allocation for the Java process.",
+      "env_variable": "SERVER_MEMORY",
+      "default_value": "4096",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|numeric"
+    }
+  ]
+}
