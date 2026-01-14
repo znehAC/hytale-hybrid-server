@@ -2,10 +2,14 @@
 set -e
 cd /home/container
 
-chown -R container:container /home/container
-[[ ! -f /etc/machine-id ]] && echo "hytale_hybrid_stable_id" > /etc/machine-id
-
 if [ "$(id -u)" = '0' ]; then
+    echo "[system] root detected. adjusting permissions..."
+    chown -R container:container /home/container || echo "[warn] chown failed, ignoring..."
+
+    if [ ! -f /etc/machine-id ]; then
+        echo "hytale_hybrid_stable_id" > /etc/machine-id 2>/dev/null || echo "[warn] could not set machine-id"
+    fi
+
     exec su container "$0" "$@"
 fi
 
@@ -28,7 +32,7 @@ if echo "$AUTH_CHECK" | grep -q "403 Forbidden"; then
     echo "[error] no license found. visit hytale.com/shop"
     exit 1
 elif echo "$AUTH_CHECK" | grep -q "authenticate"; then
-    echo "[auth] follow the link to authorize the downloader:"
+    echo "[auth] action required: authorize the downloader."
     $RUNNER $BINARY -print-version
 fi
 
