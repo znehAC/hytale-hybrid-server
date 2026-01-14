@@ -14,7 +14,7 @@
   "startup": "export SERVER_PORT={{SERVER_PORT}} && /bin/bash /entrypoint.sh",
   "config": {
     "files": "{}",
-    "startup": "{\"done\": \"Server started on\"}",
+    "startup": "{\"done\": \"Hytale Server Booted!\"}",
     "stop": "^C",
     "logs": "{}",
     "extends": null
