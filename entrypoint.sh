@@ -10,7 +10,6 @@ fi
 
 ARCH=$(uname -m)
 BINARY="./hytale-downloader-linux-amd64"
-RUNNER=""
 
 if [ ! -f "$BINARY" ]; then
     echo "[info] fetching downloader..."
@@ -19,14 +18,25 @@ if [ ! -f "$BINARY" ]; then
     chmod +x "$BINARY"
 fi
 
+# On ARM64, run the x86_64 downloader via QEMU binfmt (auto-detected by kernel)
+# Or explicit fallback if binfmt isn't registered
 if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
-    RUNNER="/usr/bin/qemu-x86_64-static"
-    echo "[system] arm64 detected. using qemu static runner."
+    if ! $BINARY --help &>/dev/null 2>&1; then
+        if [ -x /usr/bin/qemu-x86_64-static ]; then
+            echo "[system] ARM64 detected, using QEMU for x86_64 emulation"
+            BINARY="/usr/bin/qemu-x86_64-static $BINARY"
+        else
+            echo "[error] ARM64 detected but QEMU not available!"
+            exit 1
+        fi
+    else
+        echo "[system] ARM64 with binfmt support detected"
+    fi
 fi
 
 if [ ! -f "Assets.zip" ]; then
-    echo "[info] syncing assets (this will be slow on arm)..."
-    $RUNNER $BINARY -download-path latest_release.zip -skip-update-check
+    echo "[info] syncing assets (this may be slow on ARM)..."
+    $BINARY -download-path latest_release.zip -skip-update-check
     unzip -qo latest_release.zip && rm latest_release.zip
 fi
 

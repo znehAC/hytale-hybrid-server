@@ -1,11 +1,8 @@
-FROM multiarch/qemu-user-static:latest AS qemu
-
 FROM eclipse-temurin:25-jdk
 
-COPY --from=qemu /usr/bin/qemu-x86_64-static /usr/bin/qemu-x86_64-static
-
 RUN apt-get update && apt-get install -y \
-    curl wget unzip ca-certificates gnupg && \
+    curl wget unzip ca-certificates gnupg \
+    qemu-user-static && \
     rm -rf /var/lib/apt/lists/*
 
 ENV USER=container HOME=/home/container

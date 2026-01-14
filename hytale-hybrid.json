@@ -5,7 +5,7 @@
   },
   "comment": "Hytale Hybrid Egg by Gemini. Supports x86_64 and ARM64 (Oracle Ampere) natively.",
   "name": "Hytale Hybrid",
-  "description": "A robust Hytale server egg with architecture-aware downloading via Box64 for ARM nodes.",
+  "description": "A robust Hytale server egg with architecture-aware downloading via QEMU for ARM nodes.",
   "features": null,
   "docker_images": {
     "Hytale Hybrid (Latest)": "zneh/hytale-hybrid:latest"
