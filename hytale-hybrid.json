@@ -1,23 +1,31 @@
 {
-  "meta": {
-    "version": "PTDL_1",
+  "_meta": {
+    "version": "PTDL_v2",
     "update_url": null
   },
-  "comment": "Hytale Hybrid Egg by Gemini. Supports x86_64 and ARM64 (Oracle Ampere) natively.",
+  "_comment": "Hytale Hybrid Egg. Supports x86_64 and ARM64 via QEMU.",
+  "exported_at": "2026-01-14T20:00:00+00:00",
   "name": "Hytale Hybrid",
+  "author": "zneh@github.com",
   "description": "A robust Hytale server egg with architecture-aware downloading via QEMU for ARM nodes.",
   "features": null,
   "docker_images": {
-    "Hytale Hybrid (Latest)": "zneh/hytale-hybrid:latest"
+    "zneh/hytale-hybrid:latest": "zneh/hytale-hybrid:latest"
   },
   "file_denylist": [],
-  "startup": "export SERVER_PORT={{SERVER_PORT}} && /bin/bash /entrypoint.sh",
+  "startup": "/bin/bash /entrypoint.sh",
   "config": {
     "files": "{}",
     "startup": "{\"done\": \"Hytale Server Booted!\"}",
     "stop": "^C",
-    "logs": "{}",
-    "extends": null
+    "logs": "{}"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\necho \"No installation required - entrypoint handles everything.\"\nexit 0",
+      "container": "alpine:latest",
+      "entrypoint": "ash"
+    }
   },
   "variables": [
     {
@@ -27,16 +35,18 @@
       "default_value": "5520",
       "user_viewable": true,
       "user_editable": true,
-      "rules": "required|numeric|digits_between:1,5"
+      "rules": "required|numeric|digits_between:1,5",
+      "field_type": "text"
     },
     {
       "name": "Server Memory",
-      "description": "Memory allocation for the Java process.",
+      "description": "Memory allocation in MB for the Java process.",
       "env_variable": "SERVER_MEMORY",
       "default_value": "4096",
       "user_viewable": true,
       "user_editable": true,
-      "rules": "required|numeric"
+      "rules": "required|numeric",
+      "field_type": "text"
     }
   ]
 }
