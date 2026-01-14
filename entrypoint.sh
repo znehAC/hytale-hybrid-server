@@ -10,37 +10,27 @@ fi
 
 ARCH=$(uname -m)
 BINARY="./hytale-downloader-linux-amd64"
+RUNNER=""
 
 if [ ! -f "$BINARY" ]; then
+    echo "[info] fetching downloader..."
     curl -sL -o dl.zip https://downloader.hytale.com/hytale-downloader.zip
     unzip -qo dl.zip && rm dl.zip
     chmod +x "$BINARY"
 fi
 
-RUNNER=""
 if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
-    echo "[system] arm64 detected. checking for qemu..."
-    if [ -f "/usr/bin/qemu-x86_64-static" ]; then
-        RUNNER="/usr/bin/qemu-x86_64-static"
-    else
-        RUNNER=$(which qemu-x86_64-static || which qemu-x86_64 || echo "")
-    fi
-
-    if [ -z "$RUNNER" ]; then
-        echo "[error] qemu-x86_64-static not found. current path: $PATH"
-        ls -l /usr/bin/qemu* || echo "no qemu binaries in /usr/bin"
-        exit 1
-    fi
-    echo "[system] using runner: $RUNNER"
+    RUNNER="/usr/bin/qemu-x86_64-static"
+    echo "[system] arm64 detected. using qemu static runner."
 fi
 
 if [ ! -f "Assets.zip" ]; then
-    echo "[info] syncing game files via qemu..."
+    echo "[info] syncing assets (this will be slow on arm)..."
     $RUNNER $BINARY -download-path latest_release.zip -skip-update-check
     unzip -qo latest_release.zip && rm latest_release.zip
 fi
 
-echo "[start] launching native hytale server..."
+echo "[start] launching server..."
 java -XX:AOTCache=Server/HytaleServer.aot \
      -Xms2G -Xmx${SERVER_MEMORY:-4096}M \
      -jar Server/HytaleServer.jar \
