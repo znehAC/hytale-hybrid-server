@@ -1,4 +1,4 @@
-FROM multiarch/qemu-user-static:x86_64-aarch64 AS qemu
+FROM multiarch/qemu-user-static:latest AS qemu
 
 FROM eclipse-temurin:25-jdk
 
