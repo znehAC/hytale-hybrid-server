@@ -18,8 +18,6 @@ if [ ! -f "$BINARY" ]; then
     chmod +x "$BINARY"
 fi
 
-# On ARM64, run the x86_64 downloader via QEMU binfmt (auto-detected by kernel)
-# Or explicit fallback if binfmt isn't registered
 if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     if ! $BINARY --help &>/dev/null 2>&1; then
         if [ -x /usr/bin/qemu-x86_64-static ]; then
@@ -40,9 +38,13 @@ if [ ! -f "Assets.zip" ]; then
     unzip -qo latest_release.zip && rm latest_release.zip
 fi
 
+[ ! -s "config.json" ] && echo '{}' > config.json
+
+JAVA_ARGS="-Xms2G -Xmx${SERVER_MEMORY:-4096}M"
+[[ "$ARCH" != "aarch64" && "$ARCH" != "arm64" ]] && JAVA_ARGS="-XX:AOTCache=Server/HytaleServer.aot $JAVA_ARGS"
+
 echo "[start] launching server..."
-java -XX:AOTCache=Server/HytaleServer.aot \
-     -Xms2G -Xmx${SERVER_MEMORY:-4096}M \
+java $JAVA_ARGS \
      -jar Server/HytaleServer.jar \
      --assets Assets.zip \
      --bind 0.0.0.0:${SERVER_PORT:-5520} \
