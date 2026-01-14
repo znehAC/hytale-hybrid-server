@@ -13,10 +13,8 @@ ENV USER=container HOME=/home/container
 RUN useradd -m -d $HOME -s /bin/bash $USER
 
 WORKDIR $HOME
-
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
 
 USER root
-
 EXPOSE 5520/udp
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]

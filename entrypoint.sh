@@ -2,8 +2,8 @@
 set -e
 cd /home/container
 
-echo "[system] ensuring correct permissions for /home/container..."
 chown -R container:container /home/container
+[[ ! -f /etc/machine-id ]] && echo "hytale_hybrid_stable_id" > /etc/machine-id
 
 if [ "$(id -u)" = '0' ]; then
     exec su container "$0" "$@"
@@ -12,10 +12,7 @@ fi
 ARCH=$(uname -m)
 BINARY="./hytale-downloader-linux-amd64"
 RUNNER=""
-
-if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
-    RUNNER="box64"
-fi
+[[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]] && RUNNER="box64"
 
 if [ ! -f "$BINARY" ]; then
     echo "[info] fetching official hytale cli..."
@@ -24,22 +21,24 @@ if [ ! -f "$BINARY" ]; then
     chmod +x "$BINARY"
 fi
 
-echo "[info] verifying license and initializing session..."
-$RUNNER $BINARY -print-version || $RUNNER $BINARY
+echo "[info] verifying license..."
+AUTH_CHECK=$($RUNNER $BINARY -print-version 2>&1 || true)
 
-echo "[info] downloader version: $($RUNNER $BINARY -version)"
-echo "[info] target game version: $($RUNNER $BINARY -print-version)"
+if echo "$AUTH_CHECK" | grep -q "403 Forbidden"; then
+    echo "[error] no license found. visit hytale.com/shop"
+    exit 1
+elif echo "$AUTH_CHECK" | grep -q "authenticate"; then
+    echo "[auth] follow the link to authorize the downloader:"
+    $RUNNER $BINARY -print-version
+fi
 
 if [ ! -f "Assets.zip" ]; then
     echo "[info] syncing game files (~3.3gb)..."
     $RUNNER $BINARY -download-path latest_release.zip -skip-update-check
-    echo "[info] extracting hytale server files..."
     unzip -qo latest_release.zip && rm latest_release.zip
 fi
 
-echo "[start] launching hytale server (openjdk 25)..."
-echo "[note] remember: the server itself requires a SECOND device auth on first boot."
-
+echo "[start] launching native hytale server (openjdk 25)..."
 java -XX:AOTCache=Server/HytaleServer.aot \
      -Xms2G -Xmx${SERVER_MEMORY:-4096}M \
      -jar Server/HytaleServer.jar \
