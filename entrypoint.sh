@@ -32,9 +32,10 @@ if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     fi
 fi
 
-if [ ! -f "Assets.zip" ]; then
-    echo "[info] syncing assets (this may be slow on ARM)..."
-    $BINARY -download-path latest_release.zip -skip-update-check
+echo "[info] checking for updates..."
+$BINARY -download-path latest_release.zip
+if [ -f "latest_release.zip" ]; then
+    echo "[info] extracting update..."
     unzip -qo latest_release.zip && rm latest_release.zip
 fi
 
