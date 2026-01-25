@@ -11,42 +11,39 @@ fi
 ARCH=$(uname -m)
 BINARY="./hytale-downloader-linux-amd64"
 
-if [ ! -f "$BINARY" ]; then
-    echo "[info] fetching downloader..."
-    curl -sL -o dl.zip https://downloader.hytale.com/hytale-downloader.zip
-    unzip -qo dl.zip && rm dl.zip
-    chmod +x "$BINARY"
-fi
-
-if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
-    if ! $BINARY --help &>/dev/null 2>&1; then
-        if [ -x /usr/bin/qemu-x86_64-static ]; then
-            echo "[system] ARM64 detected, using QEMU for x86_64 emulation"
-            BINARY="/usr/bin/qemu-x86_64-static $BINARY"
-        else
-            echo "[error] ARM64 detected but QEMU not available!"
-            exit 1
-        fi
-    else
-        echo "[system] ARM64 with binfmt support detected"
+if [ ! -f "start.sh" ] || [ ! -f "Server/HytaleServer.jar" ]; then
+    if [ ! -f "$BINARY" ]; then
+        curl -sL -o dl.zip https://downloader.hytale.com/hytale-downloader.zip
+        unzip -qo dl.zip && rm dl.zip
+        chmod +x "$BINARY"
     fi
-fi
 
-echo "[info] checking for updates..."
-$BINARY -download-path latest_release.zip
-if [ -f "latest_release.zip" ]; then
-    echo "[info] extracting update..."
+    RUN_CMD="$BINARY"
+    if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+        if ! $BINARY --help &>/dev/null 2>&1; then
+            if [ -x /usr/bin/qemu-x86_64-static ]; then
+                RUN_CMD="/usr/bin/qemu-x86_64-static $BINARY"
+            else
+                exit 1
+            fi
+        fi
+    fi
+
+    $RUN_CMD -download-path latest_release.zip
     unzip -qo latest_release.zip && rm latest_release.zip
 fi
 
 [ ! -s "config.json" ] && echo '{}' > config.json
 
-JAVA_ARGS="-Xms2G -Xmx${SERVER_MEMORY:-4096}M"
-[[ "$ARCH" != "aarch64" && "$ARCH" != "arm64" ]] && JAVA_ARGS="-XX:AOTCache=Server/HytaleServer.aot $JAVA_ARGS"
+if [ -f "start.sh" ]; then
+    chmod +x start.sh
+fi
 
-echo "[start] launching server..."
-java $JAVA_ARGS \
-     -jar Server/HytaleServer.jar \
-     --assets Assets.zip \
+# Remove AOT cache on ARM to prevent segfaults
+if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+    rm -f Server/HytaleServer.aot
+fi
+
+exec ./start.sh \
      --bind 0.0.0.0:${SERVER_PORT:-5520} \
      --auth-mode authenticated
