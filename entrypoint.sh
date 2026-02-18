@@ -43,6 +43,9 @@ if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     rm -f Server/HytaleServer.aot
 fi
 
+chmod +x sync_plugins.sh
+./sync_plugins.sh
+
 export _JAVA_OPTIONS="-Djava.io.tmpdir=/home/container"
 
 exec ./start.sh \
