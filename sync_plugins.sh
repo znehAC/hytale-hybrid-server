@@ -1,52 +1,55 @@
 #!/bin/bash
-
 MODS_FILE="mods.list"
-STATE_FILE=".ptero_mods.state"
-MODS_DIR="Server/mods"
+STATE_FILE=".ptero/mods.state"
+MODS_DIR="mods"
 API_KEY="${CF_API_KEY}"
 
-[[ ! -f "$MODS_FILE" ]] && exit 0
-[[ -z "$API_KEY" ]] && { echo "CF_API_KEY unset"; exit 1; }
+if [[ ! -f "$MODS_FILE" ]]; then
+    echo "!!! mods.list not found. Skipping plugin sync."
+    exit 0
+fi
 
-mkdir -p "$MODS_DIR"
+if [[ -z "$API_KEY" ]]; then
+    echo "!!! CF_API_KEY is not set. Cannot sync plugins."
+    exit 1
+fi
+
+mkdir -p "$MODS_DIR" ".ptero"
 touch "$STATE_FILE"
 
-echo ">>> Verifying plugins via CurseForge API..."
-
 while IFS=, read -r SLUG ID; do
-    # Sanitize
     SLUG=$(echo "$SLUG" | xargs)
     ID=$(echo "$ID" | xargs)
 
-    # Fetch mod metadata
-    RES=$(curl -sL -H "x-api-key: $API_KEY" -H "Accept: application/json" \
-        "https://api.curseforge.com/v1/mods/$ID")
+    echo ">>> Checking mod: $SLUG ($ID)"
     
+    RES=$(curl -sL -H "x-api-key: $API_KEY" -H "Accept: application/json" "https://api.curseforge.com/v1/mods/$ID")
     LATEST_FILE_ID=$(echo "$RES" | jq -r '.data.mainFileId // .data.latestFiles[0].id')
-    CURRENT_FILE_ID=$(grep "^$ID:" "$STATE_FILE" | cut -d: -f2)
+    CURRENT_STATE_ID=$(grep "^$ID:" "$STATE_FILE" | cut -d: -f2)
+    FILE_EXISTS=$(find "$MODS_DIR" -name "*${SLUG}*.jar" | head -n 1)
 
-    if [[ "$LATEST_FILE_ID" != "$CURRENT_FILE_ID" ]]; then
-        echo "[UPDATE] $SLUG detected..."
+    if [[ "$LATEST_FILE_ID" != "$CURRENT_STATE_ID" ]] || [[ -z "$FILE_EXISTS" ]]; then
+        echo ">>> Update or missing file detected for $SLUG. Fetching file details..."
         
-        # Get download URL
-        FILE_RES=$(curl -sL -H "x-api-key: $API_KEY" -H "Accept: application/json" \
-            "https://api.curseforge.com/v1/mods/$ID/files/$LATEST_FILE_ID")
-        
+        FILE_RES=$(curl -sL -H "x-api-key: $API_KEY" -H "Accept: application/json" "https://api.curseforge.com/v1/mods/$ID/files/$LATEST_FILE_ID")
         URL=$(echo "$FILE_RES" | jq -r '.data.downloadUrl')
         NAME=$(echo "$FILE_RES" | jq -r '.data.fileName')
 
         if [[ "$URL" == "null" ]]; then
-            URL=$(curl -sL -H "x-api-key: $API_KEY" \
-                "https://api.curseforge.com/v1/mods/$ID/files/$LATEST_FILE_ID/download-url" | jq -r '.data')
+            echo ">>> Download URL is null. Requesting direct download link..."
+            URL=$(curl -sL -H "x-api-key: $API_KEY" "https://api.curseforge.com/v1/mods/$ID/files/$LATEST_FILE_ID/download-url" | jq -r '.data')
         fi
 
-        # Atomic cleanup and download
-        find "$MODS_DIR" -name "${SLUG}*.jar" -delete
+        echo ">>> Removing old versions of $SLUG..."
+        find "$MODS_DIR" -name "*${SLUG}*.jar" -delete
+        
+        echo ">>> Downloading $NAME..."
         curl -sL -o "$MODS_DIR/$NAME" "$URL"
         
-        # Persist state
+        echo ">>> Updating state for $ID..."
         sed -i "/^$ID:/d" "$STATE_FILE"
         echo "$ID:$LATEST_FILE_ID" >> "$STATE_FILE"
-        echo "[DONE] $NAME downloaded."
+    else
+        echo ">>> $SLUG is up to date."
     fi
 done < "$MODS_FILE"
