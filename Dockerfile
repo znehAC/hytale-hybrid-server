@@ -10,6 +10,7 @@ RUN useradd -m -d $HOME -s /bin/bash $USER
 
 WORKDIR $HOME
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
+COPY --chmod=755 sync_plugins.sh /sync_plugins.sh
 
 USER root
 EXPOSE 5520/udp
