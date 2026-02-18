@@ -39,10 +39,11 @@ if [ -f "start.sh" ]; then
     chmod +x start.sh
 fi
 
-# Remove AOT cache on ARM to prevent segfaults
 if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     rm -f Server/HytaleServer.aot
 fi
+
+export _JAVA_OPTIONS="-Djava.io.tmpdir=/home/container"
 
 exec ./start.sh \
      --bind 0.0.0.0:${SERVER_PORT:-5520} \
