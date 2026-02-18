@@ -1,7 +1,7 @@
 #!/bin/bash
 MODS_FILE="mods.list"
 STATE_FILE=".ptero/mods.state"
-MODS_DIR="mods"
+MODS_DIR="Server/mods"
 API_KEY="${CF_API_KEY}"
 
 if [[ ! -f "$MODS_FILE" ]]; then
