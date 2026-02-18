@@ -5,8 +5,13 @@ cd /home/container
 mkdir -p .ptero/tmp .ptero/bin
 
 if [ "$(id -u)" = '0' ]; then
+    if [ ! -f ".ptero/machine-id" ]; then
+        echo ">>> Generating persistent machine-id..."
+        cat /proc/sys/kernel/random/uuid > .ptero/machine-id
+    fi
+    cat .ptero/machine-id > /etc/machine-id
+
     chown -R container:container /home/container 2>/dev/null || true
-    [[ ! -f /etc/machine-id ]] && echo "hytale_hybrid_stable_id" > /etc/machine-id 2>/dev/null || true
     exec su container "$0" "$@"
 fi
 
